@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вишлист на подарки для Настюшки!</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Pacifico для заголовка, Montserrat для основного текста -->
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        purple: {
+                            950: '#0f051d',
+                            900: '#1a0b2e',
+                            800: '#2a1247',
+                            700: '#441975',
+                            600: '#6b21a8',
+                            500: '#9333ea',
+                            400: '#c084fc',
+                            300: '#d8b4fe',
+                        }
+                    },
+                    fontFamily: {
+                        handwriting: ['Caveat', 'cursive'],
+                        sans: ['Montserrat', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0c0414;
+            color: #f3e8ff;
+            font-family: 'Montserrat', sans-serif;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Анимированный фиолетовый фон */
+        .bg-glow {
+            background: radial-gradient(circle at 50% 10%, rgba(147, 51, 234, 0.25) 0%, rgba(15, 5, 29, 0) 70%),
+                        radial-gradient(circle at 80% 60%, rgba(192, 132, 252, 0.15) 0%, rgba(15, 5, 29, 0) 50%);
+        }
+
+        /* Canvas для заднего фона с блёстками */
+        #sparkles-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Эффект нажатия на карточку */
+        .card-tap-effect {
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease;
+        }
+        .card-tap-effect:active {
+            transform: scale(0.95);
+            box-shadow: 0 0 25px rgba(192, 132, 252, 0.6);
+        }
+
+        /* Неоновое свечение для элементов */
+        .purple-glow {
+            box-shadow: 0 4px 20px -2px rgba(147, 51, 234, 0.4);
+        }
+
+        /* Кастомный искрящийся эффект при клике */
+        .click-sparkle {
+            position: fixed;
+            pointer-events: none;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #e9d5ff;
+            box-shadow: 0 0 10px #c084fc, 0 0 20px #9333ea;
+            animation: popSparkle 0.6s ease-out forwards;
+            z-index: 9999;
+        }
+
+        @keyframes popSparkle {
+            0% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(calc(-50% + var(--vx)), calc(-50% + var(--vy))) scale(0);
+                opacity: 0;
+            }
+        }
+
+        /* Имитация кастомной сетки Masonry/Collage */
+        .grid-collage > :nth-child(4n+1) {
+            grid-column: span 2 / span 2;
+        }
+    </style>
+</head>
+<body class="relative min-h-screen pb-16 bg-glow">
+
+    <!-- Canvas для фоновой анимации звёздочек -->
+    <canvas id="sparkles-canvas"></canvas>
+
+    <!-- Основной контейнер (мобильная вёрстка) -->
+    <div class="relative z-10 max-w-md mx-auto px-4 pt-8">
+
+        <!-- Шапка / Заголовок -->
+        <header class="text-center mb-8 relative">
+            <div class="inline-block relative">
+                <span class="absolute -top-6 -left-6 text-purple-400 text-2xl animate-bounce">✨</span>
+                <span class="absolute -bottom-2 -right-4 text-purple-300 text-xl animate-pulse">💖</span>
+                <h1 class="font-handwriting text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-200 via-purple-400 to-pink-300 drop-shadow-[0_2px_10px_rgba(168,85,247,0.5)]">
+                    Вишлист на подарки<br>для Настюшки! 🎁
+                </h1>
+            </div>
+            <p class="text-xs text-purple-300/80 mt-3 tracking-widest uppercase font-medium">
+                ~ Список желанных подарков ~
+            </p>
+            
+            <!-- Декоративная разделительная линия -->
+            <div class="w-32 h-0.5 bg-gradient-to-r from-transparent via-purple-500 to-transparent mx-auto mt-4"></div>
+        </header>
+
+        <!-- БЛОК ИНСТРУКЦИИ ДЛЯ НАСТЮШКИ (Легко скрыть или удалить) -->
+        <div class="mb-6 p-4 rounded-2xl bg-purple-900/40 border border-purple-500/30 backdrop-blur-sm text-xs text-purple-200">
+            <p class="font-semibold text-purple-300 mb-1"><i class="fa-solid fa-sparkles mr-1"></i> Как настроить вишлист:</p>
+             Нажимай на карточку, чтобы открыть товар в магазине! Чтобы вставить свои картинки и ссылки — просто отредактируй значение <code class="bg-purple-950 px-1 rounded text-pink-300">href="..."</code> и <code class="bg-purple-950 px-1 rounded text-pink-300">src="..."</code> в коде этого HTML-файла.
+        </div>
+
+        <!-- КАТЕГОРИЯ 1: ДЛЯ ВОЛОС -->
+        <section class="mb-10">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="p-2 rounded-xl bg-purple-900/60 border border-purple-500/40 text-purple-300">
+                    <i class="fa-solid fa-sparkles text-lg"></i>
+                </div>
+                <h2 class="text-xl font-bold text-purple-100 tracking-wide">1. Для Волос <span class="text-xs text-purple-400 font-normal">(VOIS)</span></h2>
+            </div>
+
+            <!-- Асимметричная сетка товаров -->
+            <div class="grid grid-cols-2 gap-3.5">
+
+                <!-- Товар 1.1: Термозащита -->
+                <!-- ИНСТРУКЦИЯ: Замени href на ссылку на магазин (WB/Ozon) -->
+                <a href="https://wildberries.ru" target="_blank" rel="noopener" class="card-tap-effect block group relative rounded-2xl overflow-hidden bg-purple-950/60 border border-purple-800/50 purple-glow col-span-2">
+                    <div class="h-48 w-full overflow-hidden relative">
+                        <!-- ИНСТРУКЦИЯ: Замени src на ссылку на изображение товара -->
+                        <img src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=800&auto=format&fit=crop" alt="Термозащита VOIS" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-purple-950 via-purple-950/20 to-transparent"></div>
+                        <span class="absolute top-3 right-3 bg-purple-900/80 backdrop-blur-md border border-purple-400/30 text-purple-200 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase">VOIS</span>
+                    </div>
+                    <div class="p-3.5 relative -mt-6">
+                        <h3 class="font-bold text-base text-white group-hover:text-purple-300 transition-colors">Термозащита для волос</h3>
+                        <p class="text-xs text-purple-300/70 mt-0.5">Бренд: VOIS • Защита и уход</p>
+                        <div class="mt-2 flex items-center text-xs font-semibold text-purple-400">
+                            <span>Смотреть на маркетплейсе</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square ml-1.5 text-[10px]"></i>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Товар 1.2: Шампунь -->
+                <a href="https://wildberries.ru" target="_blank" rel="noopener" class="card-tap-effect block group relative rounded-2xl overflow-hidden bg-purple-950/60 border border-purple-800/50">
+                    <div class="h-36 w-full overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?q=80&w=500&auto=format&fit=crop" alt="Шампунь VOIS" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-purple-950 via-transparent to-transparent"></div>
+                    </div>
+                    <div class="p-3">
+                        <span class="text-[9px] text-purple-400 uppercase font-bold tracking-wider">VOIS</span>
+                        <h3 class="font-semibold text-sm text-white">Шампунь</h3>
+                    </div>
+                </a>
+
+                <!-- Товар 1.3: Бальзам -->
+                <a href="https://wildberries.ru" target="_blank" rel="noopener" class="card-tap-effect block group relative rounded-2xl overflow-hidden bg-purple-950/60 border border-purple-800/50">
+                    <div class="h-36 w-full overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?q=80&w=500&auto=format&fit=crop" alt="Бальзам VOIS" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-purple-950 via-transparent to-transparent"></div>
+                    </div>
+                    <div class="p-3">
+                        <span class="text-[9px] text-purple-400 uppercase font-bold tracking-wider">VOIS</span>
+                        <h3 class="font-semibold text-sm text-white">Бальзам</h3>
+                    </div>
+                </a>
+
+                <!-- Товар 1.4: Маска для волос -->
+                <a href="https://wildberries.ru" target="_blank" rel="noopener" class="card-tap-effect block group relative rounded-2xl overflow-hidden bg-purple-950/60 border border-purple-800/50 col-span-2">
+                    <div class="h-32 w-full overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1519735777090-ec97162dc266?q=80&w=800&auto=format&fit=crop" alt="Маска VOIS" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-purple-950 via-purple-950/40 to-transparent"></div>
+                    </div>
+                    <div class="p-3.5 flex justify-between items-center">
+                        <div>
+                            <h3 class="font-semibold text-sm text-white">Маска для волос</h3>
+                            <p class="text-xs text-purple-300/70">Глубокое восстановление (VOIS)</p>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-purple-400 text-sm"></i>
+                    </div>
+                </a>
+
+            </div>
+        </section>
+
+        <!-- КАТЕГОРИЯ 2: ДЛЯ ЛИЦА -->
+        <section class="mb-10">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="p-2 rounded-xl bg-purple-900/60 border border-purple-500/40 text-purple-300">
+                    <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+                </div>
+                <h2 class="text-xl font-bold text-purple-100 tracking-wide">2. Для Лица <span class="text-xs text-purple-400 font-normal">(VOIS)</span></h2>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3.5">
+
+                <!-- Товар 2.1: Крем для лица -->
+                <a href="https://wildberries.ru" target="_blank" rel="noopener" class="card-tap-effect block group relative rounded-2xl overflow-hidden bg-purple-950/60 border border-purple-800/50">
+                    <div class="h-40 w-full overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1556228720-195a672e8a03?q=80&w=500&auto=format&fit=crop" alt="Крем увлажняющий VOIS" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-purple-950 via-transparent to-transparent"></div>
+                    </div>
+                    <div class="p-3">
+                        <span class="text-[9px] text-purple-400 uppercase font-bold tracking-wider">VOIS</span>
+                        <h3 class="font-semibold text-xs text-white">Крем увлажняющий</h3>
+                    </div>
+                </a>
+
+                <!-- Товар 2.2: Сыворотка -->
+                <a href="https://wildberries.ru" target="_blank" rel="noopener" class="card-tap-effect block group relative rounded-2xl overflow-hidden bg-purple-950/60 border border-purple-800/50">
+                    <div class="h-40 w-full overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1620916566398-39f1143ab7be?q=80&w=500&auto=format&fit=crop" alt="Сыворотка VOIS" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-purple-950 via-transparent to-transparent"></div>
+                    </div>
+                    <div class="p-3">
+                        <span class="text-[9px] text-purple-400 uppercase font-bold tracking-wider">VOIS</span>
+                        <h3 class="font-semibold text-xs text-white">Сыворотка для лица</h3>
+                    </div>
+                </a>
+
+                <!-- Товар 2.3: Маски для лица -->
+                <a href="https://wildberries.ru" target="_blank" rel="noopener" class="card-tap-effect block group relative rounded-2xl overflow-hidden bg-purple-950/60 border border-purple-800/50">
+                    <div class="h-32 w-full overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1596755094514-f87e34085b2c?q=80&w=500&auto=format&fit=crop" alt="Маски VOIS" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-purple-950 via-transparent to-transparent"></div>
+                    </div>
+                    <div class="p-3">
+                        <span class="text-[9px] text-purple-400 uppercase font-bold tracking-wider">VOIS</span>
+                        <h3 class="font-semibold text-xs text-white">Маски для лица</h3>
+                    </div>
+                </a>
+
+                <!-- Товар 2.4: Крем для век -->
+                <a href="https://wildberries.ru" target="_blank" rel="noopener" class="card-tap-effect block group relative rounded-2xl overflow-hidden bg-purple-950/60 border border-purple-800/50">
+                    <div class="h-32 w-full overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1608248597263-0057e57b4524?q=80&w=500&auto=format&fit=crop" alt="Крем для век VOIS" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-purple-950 via-transparent to-transparent"></div>
+                    </div>
+                    <div class="p-3">
+                        <span class="text-[9px] text-purple-400 uppercase font-bold tracking-wider">VOIS</span>
+                        <h3 class="font-semibold text-xs text-white">Крем для век</h3>
+                    </div>
+                </a>
+
+            </div>
+        </section>
+
+        <!-- КАТЕГОРИЯ 3: ДЛЯ ТЕЛА -->
+        <section class="mb-10">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="p-2 rounded-xl bg-purple-900/60 border border-purple-500/40 text-purple-300">
+                    <i class="fa-solid fa-pump-soap text-lg"></i>
+                </div>
+                <h2 class="text-xl font-bold text-purple-100 tracking-wide">3. Для Тела</h2>
+            </div>
+
+            <div class="space-y-3.5">
+
+                <!-- Товар 3.1: Гель для душа -->
+                <a href="https://wildberries.ru" target="_blank" rel="noopener" class="card-tap-effect block group relative rounded-2xl overflow-hidden bg-purple-950/60 border border-purple-800/50">
+                    <div class="flex items-center">
+                        <div class="h-28 w-28 flex-shrink-0 overflow-hidden relative">
+                            <img src="https://images.unsplash.com/photo-1556228722-d119320e61fa?q=80&w=500&auto=format&fit=crop" alt="Гель для душа" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        </div>
+                        <div class="p-4">
+                            <span class="text-[10px] bg-pink-500/20 text-pink-300 font-semibold px-2 py-0.5 rounded-md border border-pink-500/30">Главное вкусненькое! 🍓</span>
+                            <h3 class="font-bold text-sm text-white mt-1">Гель для душа парфюмированный</h3>
+                            <p class="text-xs text-purple-300/70 mt-1">Ароматный уход для тела</p>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Товар 3.2 & 3.3 Коллаж в 2 колонки -->
+                <div class="grid grid-cols-2 gap-3.5">
+                    <!-- Скраб -->
+                    <a href="https://wildberries.ru" target="_blank" rel="noopener" class="card-tap-effect block group relative rounded-2xl overflow-hidden bg-purple-950/60 border border-purple-800/50">
+                        <div class="h-36 w-full overflow-hidden relative">
+                            <img src="https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?q=80&w=500&auto=format&fit=crop" alt="Скраб для тела" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                            <div class="absolute inset-0 bg-gradient-to-t from-purple-950 via-transparent to-transparent"></div>
+                        </div>
+                        <div class="p-3">
+                            <h3 class="font-semibold text-xs text-white">Скраб для тела</h3>
+                        </div>
+                    </a>
+
+                    <!-- Бомбочки -->
+                    <a href="https://wildberries.ru" target="_blank" rel="noopener" class="card-tap-effect block group relative rounded-2xl overflow-hidden bg-purple-950/60 border border-purple-800/50">
+                        <div class="h-36 w-full overflow-hidden relative">
+                            <img src="https://images.unsplash.com/photo-1547793549-7038dd892c90?q=80&w=500&auto=format&fit=crop" alt="Бомбочки для ванны" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                            <div class="absolute inset-0 bg-gradient-to-t from-purple-950 via-transparent to-transparent"></div>
+                        </div>
+                        <div class="p-3">
+                            <h3 class="font-semibold text-xs text-white">Бомбочки для ванны</h3>
+                        </div>
+                    </a>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- КАТЕГОРИЯ 4: ДЛЯ ДОМА -->
+        <section class="mb-10">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="p-2 rounded-xl bg-purple-900/60 border border-purple-500/40 text-purple-300">
+                    <i class="fa-solid fa-house-chimney-window text-lg"></i>
+                </div>
+                <h2 class="text-xl font-bold text-purple-100 tracking-wide">4. Для Дома</h2>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3.5">
+
+                <!-- Товар 4.1: Полотенца -->
+                <a href="https://wildberries.ru" target="_blank" rel="noopener" class="card-tap-effect block group relative rounded-2xl overflow-hidden bg-purple-950/60 border border-purple-800/50 col-span-2">
+                    <div class="h-36 w-full overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1616627547584-bf28cee262db?q=80&w=800&auto=format&fit=crop" alt="Полотенца" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-purple-950 via-purple-950/30 to-transparent"></div>
+                    </div>
+                    <div class="p-3.5">
+                        <h3 class="font-bold text-sm text-white">Полотенца для рук и лица</h3>
+                        <p class="text-xs text-purple-300/80 mt-1"><i class="fa-solid fa-palette text-purple-400 mr-1"></i>Цвета: серые, чёрные</p>
+                    </div>
+                </a>
+
+                <!-- Товар 4.2: Ткань для одежды -->
+                <a href="https://wildberries.ru" target="_blank" rel="noopener" class="card-tap-effect block group relative rounded-2xl overflow-hidden bg-purple-950/60 border border-purple-800/50">
+                    <div class="h-40 w-full overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?q=80&w=500&auto=format&fit=crop" alt="Ткань для одежды" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-purple-950 via-transparent to-transparent"></div>
+                    </div>
+                    <div class="p-3">
+                        <h3 class="font-semibold text-xs text-white">Ткань для домашней одежды</h3>
+                        <p class="text-[10px] text-purple-300/70 mt-1">Приятная к телу, нежные или тёмные цвета</p>
+                    </div>
+                </a>
+
+                <!-- Товар 4.3: Простынь -->
+                <a href="https://wildberries.ru" target="_blank" rel="noopener" class="card-tap-effect block group relative rounded-2xl overflow-hidden bg-purple-950/60 border border-purple-800/50">
+                    <div class="h-40 w-full overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1631679706909-1844bbd07221?q=80&w=500&auto=format&fit=crop" alt="Простынь на резинке" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-purple-950 via-transparent to-transparent"></div>
+                    </div>
+                    <div class="p-3">
+                        <h3 class="font-semibold text-xs text-white">Простынь на резинке</h3>
+                        <p class="text-[10px] text-purple-300/70 mt-1">140х200 (высота 20см)</p>
+                        <p class="text-[10px] text-purple-400 font-medium">Серые оттенки, фиолетовый</p>
+                    </div>
+                </a>
+
+                <!-- Товар 4.4: Отпариватель -->
+                <a href="https://wildberries.ru" target="_blank" rel="noopener" class="card-tap-effect block group relative rounded-2xl overflow-hidden bg-purple-950/60 border border-purple-800/50 col-span-2">
+                    <div class="h-36 w-full overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?q=80&w=800&auto=format&fit=crop" alt="Отпариватель" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-purple-950 via-purple-950/30 to-transparent"></div>
+                    </div>
+                    <div class="p-3.5">
+                        <h3 class="font-bold text-sm text-white">Ручной отпариватель</h3>
+                        <p class="text-xs text-purple-300/80 mt-1">✨ Главное: небольшой и удобный!</p>
+                    </div>
+                </a>
+
+            </div>
+        </section>
+
+        <!-- ДОП КАТЕГОРИЯ: ЧТО-ТО ИНТЕРЕСНОЕ -->
+        <section class="mb-12">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="p-2 rounded-xl bg-purple-900/60 border border-purple-500/40 text-purple-300">
+                    <i class="fa-solid fa-gift text-lg"></i>
+                </div>
+                <h2 class="text-xl font-bold text-purple-100 tracking-wide">Доп Категория</h2>
+            </div>
+
+            <a href="https://wildberries.ru" target="_blank" rel="noopener" class="card-tap-effect block group relative rounded-3xl overflow-hidden bg-gradient-to-br from-purple-900/80 via-purple-950 to-purple-900/40 border border-purple-500/40 p-5 text-center purple-glow">
+                <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-purple-800/50 border border-purple-400/40 flex items-center justify-center text-purple-200 text-2xl shadow-inner animate-pulse">
+                    🎁
+                </div>
+                <h3 class="font-bold text-lg text-white group-hover:text-purple-300 transition-colors">Что-то интересное, что пригодится!</h3>
+                <p class="text-xs text-purple-300/80 mt-1 max-w-xs mx-auto">На твой вкус и фантазию — сюрпризы всегда дарят самые яркие эмоции ✨</p>
+                <div class="mt-4 inline-flex items-center px-4 py-2 rounded-full bg-purple-600/50 border border-purple-400/30 text-xs font-semibold text-purple-100">
+                    Нажми для идей <i class="fa-solid fa-sparkles ml-2"></i>
+                </div>
+            </a>
+        </section>
+
+        <!-- Подвал сайта -->
+        <footer class="text-center py-6 border-t border-purple-900/60">
+            <p class="font-handwriting text-2xl text-purple-300">С любовью для Настюшки ✨</p>
+            <p class="text-[10px] text-purple-400/60 mt-1">Создано специально к Дню Рождения</p>
+        </footer>
+
+    </div>
+
+    <!-- СКРИПТ: Фоновые мерцающие блёстки (Canvas) и анимация клика -->
+    <script>
+        // --- 1. Фоновая анимация блёсток ---
+        const canvas = document.getElementById('sparkles-canvas');
+        const ctx = canvas.getContext('2d');
+
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        // Создаем массив блесток
+        const sparklesCount = 45;
+        const sparkles = [];
+
+        for (let i = 0; i < sparklesCount; i++) {
+            sparkles.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                size: Math.random() * 2.5 + 0.5,
+                alpha: Math.random(),
+                speed: Math.random() * 0.02 + 0.005,
+                dir: Math.random() > 0.5 ? 1 : -1
+            });
+        }
+
+        function drawSparkles() {
+            ctx.clearRect(0, 0, width, height);
+
+            sparkles.forEach(s => {
+                s.alpha += s.speed * s.dir;
+                if (s.alpha >= 1) {
+                    s.alpha = 1;
+                    s.dir = -1;
+                } else if (s.alpha <= 0) {
+                    s.alpha = 0;
+                    s.dir = 1;
+                    s.x = Math.random() * width;
+                    s.y = Math.random() * height;
+                }
+
+                ctx.save();
+                ctx.globalAlpha = s.alpha;
+                ctx.fillStyle = '#e9d5ff';
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = '#c084fc';
+
+                // Рисуем звездочку/точку
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Рисуем лучи для больших блесток
+                if (s.size > 2) {
+                    ctx.strokeStyle = '#f3e8ff';
+                    ctx.lineWidth = 0.5;
+                    ctx.beginPath();
+                    ctx.moveTo(s.x - s.size * 2, s.y);
+                    ctx.lineTo(s.x + s.size * 2, s.y);
+                    ctx.moveTo(s.x, s.y - s.size * 2);
+                    ctx.lineTo(s.x, s.y + s.size * 2);
+                    ctx.stroke();
+                }
+
+                ctx.restore();
+            });
+
+            requestAnimationFrame(drawSparkles);
+        }
+
+        drawSparkles();
+
+        // --- 2. Эффект вспышки блёсток при клике/тапе ---
+        document.addEventListener('click', (e) => {
+            createSparkleBurst(e.clientX, e.clientY);
+        });
+
+        function createSparkleBurst(x, y) {
+            const count = 12; // Количество частиц при клике
+            for (let i = 0; i < count; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'click-sparkle';
+
+                const angle = (Math.PI * 2 / count) * i + (Math.random() * 0.5);
+                const velocity = 30 + Math.random() * 40;
+                const vx = Math.cos(angle) * velocity + 'px';
+                const vy = Math.sin(angle) * velocity + 'px';
+
+                particle.style.left = x + 'px';
+                particle.style.top = y + 'px';
+                particle.style.setProperty('--vx', vx);
+                particle.style.setProperty('--vy', vy);
+
+                document.body.appendChild(particle);
+
+                setTimeout(() => {
+                    particle.remove();
+                }, 600);
+            }
+        }
+    </script>
+</body>
+</html>
